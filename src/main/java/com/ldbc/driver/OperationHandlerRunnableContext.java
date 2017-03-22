@@ -1,17 +1,18 @@
 package com.ldbc.driver;
 
 import com.ldbc.driver.runtime.ConcurrentErrorReporter;
-import com.ldbc.driver.runtime.coordination.CompletionTimeException;
 import com.ldbc.driver.runtime.coordination.LocalCompletionTimeWriter;
 import com.ldbc.driver.runtime.metrics.MetricsCollectionException;
 import com.ldbc.driver.runtime.metrics.MetricsService;
 import com.ldbc.driver.runtime.scheduling.Spinner;
 import com.ldbc.driver.runtime.scheduling.SpinnerCheck;
 import com.ldbc.driver.temporal.TimeSource;
+import org.apache.log4j.Logger;
 import stormpot.Poolable;
 import stormpot.Slot;
 
 import static java.lang.String.format;
+import static org.apache.log4j.Logger.getLogger;
 
 public class OperationHandlerRunnableContext implements Runnable, Poolable {
     // set by OperationHandlerRunnerFactory
@@ -36,11 +37,11 @@ public class OperationHandlerRunnableContext implements Runnable, Poolable {
 
     private ResultReporter.SimpleResultReporter resultReporter = null;
 
-    private static final String TOPIC = "ldbc_updates";
-
     public final void setSlot(Slot slot) {
         this.slot = slot;
     }
+
+    private static final Logger logger = getLogger(OperationHandlerRunnableContext.class);
 
     public final void init(
             TimeSource timeSource,
@@ -133,7 +134,9 @@ public class OperationHandlerRunnableContext implements Runnable, Poolable {
             long startOfLatencyMeasurementAsNano = timeSource.nanoSnapshot();
 
             if (produceMode) {
+                logger.info("update " + operation.toString());
                 dbConnectionState.getUpdateProducer().send(operation);
+                Thread.sleep(20);
             } else {
                 operationHandler.executeOperation(operation, dbConnectionState, resultReporter);
             }

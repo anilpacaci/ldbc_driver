@@ -45,6 +45,12 @@ public class WorkloadResultsSnapshot
     @JsonProperty( value = "update_throughput" )
     private double updateThroughput;
 
+    @JsonProperty( value = "read_count" )
+    private long readCount;
+
+    @JsonProperty( value = "read_throughput" )
+    private double readThroughput;
+
     public static WorkloadResultsSnapshot fromJson( File jsonFile ) throws IOException
     {
         return new ObjectMapper().readValue( jsonFile, WorkloadResultsSnapshot.class );
@@ -59,11 +65,13 @@ public class WorkloadResultsSnapshot
     {
     }
 
-    public WorkloadResultsSnapshot( Map<String,OperationMetricsSnapshot> metrics,
+    public WorkloadResultsSnapshot(
+            Map<String, OperationMetricsSnapshot> metrics,
             long startTimeAsMilli,
             long latestFinishTimeAsMilli,
             long operationCount,
             long updateCount,
+            long readCount,
             TimeUnit unit )
     {
         this.metrics = Lists.newArrayList( metrics.values() );
@@ -73,6 +81,7 @@ public class WorkloadResultsSnapshot
         this.totalRunDurationAsUnit = unit.convert( latestFinishTimeAsMilli - startTimeAsMilli, TimeUnit.MILLISECONDS );
         this.throughput = 1000 * (operationCount / (double) unit.toMillis( totalRunDurationAsUnit ));
         this.updateThroughput = 1000 * (updateCount / (double) unit.toMillis( totalRunDurationAsUnit ));
+        this.readThroughput = 1000 * (readCount / (double) unit.toMillis( totalRunDurationAsUnit ));
         this.operationCount = operationCount;
         this.unit = unit;
     }
@@ -123,6 +132,14 @@ public class WorkloadResultsSnapshot
         return updateThroughput;
     }
 
+    public long getReadCount() {
+        return readCount;
+    }
+
+    public double getReadThroughput() {
+        return readThroughput;
+    }
+
     public String toJson()
     {
         try
@@ -149,6 +166,8 @@ public class WorkloadResultsSnapshot
                ", throughput=" + throughput +
                ", updateCount=" + updateCount +
                ", updateThroughput=" + updateThroughput +
+               ", readCount=" + readCount +
+               ", readThroughput=" + readThroughput +
                '}';
     }
 
@@ -165,6 +184,10 @@ public class WorkloadResultsSnapshot
         if ( latestFinishTimeAsUnit != that.latestFinishTimeAsUnit )
         { return false; }
         if ( operationCount != that.operationCount )
+        { return false; }
+        if ( updateCount != that.updateCount )
+        { return false; }
+        if ( readCount != that.readCount )
         { return false; }
         if ( startTimeAsUnit != that.startTimeAsUnit )
         { return false; }
@@ -187,6 +210,8 @@ public class WorkloadResultsSnapshot
         result = 31 * result + (int) (latestFinishTimeAsUnit ^ (latestFinishTimeAsUnit >>> 32));
         result = 31 * result + (int) (totalRunDurationAsUnit ^ (totalRunDurationAsUnit >>> 32));
         result = 31 * result + (int) (operationCount ^ (operationCount >>> 32));
+        result = 31 * result + (int) (updateCount ^ (updateCount >>> 32));
+        result = 31 * result + (int) (readCount ^ (readCount >>> 32));
         return result;
     }
 }

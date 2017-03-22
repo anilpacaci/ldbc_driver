@@ -40,7 +40,7 @@ public class MetricsManager
     }
 
     public static OperationTypeMetricsManager[] toOperationTypeMetricsManagerArray(
-            Map<Integer,Class<? extends Operation>> operationTypeToClassMapping,
+            Map<Integer, Class<? extends Operation>> operationTypeToClassMapping,
             TimeUnit unit,
             long highestExpectedRuntimeDurationAsNano,
             LoggingServiceFactory loggingServiceFactory ) throws MetricsCollectionException
@@ -82,7 +82,7 @@ public class MetricsManager
         }
     }
 
-    public static String[] toOperationNameArray( Map<Integer,Class<? extends Operation>> operationTypeToClassMapping )
+    public static String[] toOperationNameArray( Map<Integer, Class<? extends Operation>> operationTypeToClassMapping )
             throws MetricsCollectionException
     {
         if ( operationTypeToClassMapping.isEmpty() )
@@ -115,10 +115,11 @@ public class MetricsManager
         }
     }
 
-    MetricsManager( TimeSource timeSource,
+    MetricsManager(
+            TimeSource timeSource,
             TimeUnit unit,
             long highestExpectedRuntimeDurationAsNano,
-            Map<Integer,Class<? extends Operation>> operationTypeToClassMapping,
+            Map<Integer, Class<? extends Operation>> operationTypeToClassMapping,
             LoggingServiceFactory loggingServiceFactory ) throws MetricsCollectionException
     {
         operationTypeMetricsManagers = toOperationTypeMetricsManagerArray(
@@ -158,8 +159,20 @@ public class MetricsManager
         long count = 0;
         for ( OperationTypeMetricsManager operationTypeMetricsManager : operationTypeMetricsManagers )
         {
-            //WARN only report non-update operations
-            if ( null != operationTypeMetricsManager && !operationTypeMetricsManager.name().contains("Update") && operationTypeMetricsManager.count() > 0 )
+            if ( null != operationTypeMetricsManager && operationTypeMetricsManager.count() > 0 )
+            {
+                count += operationTypeMetricsManager.count();
+            }
+        }
+        return count;
+    }
+
+    private long totalReadCount()
+    {
+        long count = 0;
+        for ( OperationTypeMetricsManager operationTypeMetricsManager : operationTypeMetricsManagers )
+        {
+            if ( null != operationTypeMetricsManager && !operationTypeMetricsManager.name().contains( "Update" ) && operationTypeMetricsManager.count() > 0 )
             {
                 count += operationTypeMetricsManager.count();
             }
@@ -173,7 +186,7 @@ public class MetricsManager
         for ( OperationTypeMetricsManager operationTypeMetricsManager : operationTypeMetricsManagers )
         {
             // WARN: only report the non-update operations
-            if ( null != operationTypeMetricsManager && operationTypeMetricsManager.name().contains("Update") && operationTypeMetricsManager.count() > 0 )
+            if ( null != operationTypeMetricsManager && operationTypeMetricsManager.name().contains( "Update" ) && operationTypeMetricsManager.count() > 0 )
             {
                 count += operationTypeMetricsManager.count();
             }
@@ -183,7 +196,7 @@ public class MetricsManager
 
     WorkloadResultsSnapshot snapshot()
     {
-        Map<String,OperationMetricsSnapshot> operationMetricsMap = new HashMap<>();
+        Map<String, OperationMetricsSnapshot> operationMetricsMap = new HashMap<>();
         for ( OperationTypeMetricsManager operationTypeMetricsManager : operationTypeMetricsManagers )
         {
             if ( null != operationTypeMetricsManager && operationTypeMetricsManager.count() > 0 )
@@ -197,7 +210,7 @@ public class MetricsManager
                 (startTimeAsMilli == Long.MAX_VALUE) ? -1 : startTimeAsMilli,
                 (latestFinishTimeAsMilli == Long.MIN_VALUE) ? -1 : latestFinishTimeAsMilli,
                 totalOperationCount(), totalUpdateCount(),
-                unit );
+                totalReadCount(), unit );
     }
 
     WorkloadStatusSnapshot status()
@@ -208,37 +221,47 @@ public class MetricsManager
             long runDurationAsMilli = 0;
             long operationCount = 0;
             long updateCount = 0;
+            long readCount = 0;
             long durationSinceLastMeasurementAsMilli = 0;
             double operationsPerSecond = 0;
             double updatesPerSecond = 0;
+            double readsPerSecond = 0;
             return new WorkloadStatusSnapshot(
                     runDurationAsMilli,
                     operationCount,
                     durationSinceLastMeasurementAsMilli,
-                    operationsPerSecond ,
+                    operationsPerSecond,
                     updateCount,
-                    updatesPerSecond);
+                    updatesPerSecond,
+                    readCount,
+                    readsPerSecond );
         }
         else
         {
             long runDurationAsMilli = nowAsMilli - startTimeAsMilli;
             long operationCount = totalOperationCount();
             long updateCount = totalUpdateCount();
+            long readCount = totalReadCount();
             long durationSinceLastMeasurementAsMilli =
                     (-1 == latestFinishTimeAsMilli) ? -1 : nowAsMilli - latestFinishTimeAsMilli;
             double operationsPerSecond =
                     ((double) operationCount / TimeUnit.MILLISECONDS.toNanos( runDurationAsMilli )) *
-                    TimeUnit.SECONDS.toNanos( 1 );
+                            TimeUnit.SECONDS.toNanos( 1 );
             double updatesPerSecond =
                     ((double) updateCount / TimeUnit.MILLISECONDS.toNanos( runDurationAsMilli )) *
+                            TimeUnit.SECONDS.toNanos( 1 );
+            double readsPerSecond =
+                    ((double) readCount / TimeUnit.MILLISECONDS.toNanos( runDurationAsMilli )) *
                             TimeUnit.SECONDS.toNanos( 1 );
             return new WorkloadStatusSnapshot(
                     runDurationAsMilli,
                     operationCount,
                     durationSinceLastMeasurementAsMilli,
-                    operationsPerSecond ,
+                    operationsPerSecond,
                     updateCount,
-                    updatesPerSecond);
+                    updatesPerSecond,
+                    readCount,
+                    readsPerSecond);
         }
     }
 }

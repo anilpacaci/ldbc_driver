@@ -42,12 +42,13 @@ class WorkloadStatusThread extends Thread
         final SettableRecentThroughputAndDuration
                 settableRecentThroughputAndDuration = new SettableRecentThroughputAndDuration();
         final int statusRecency = 4;
-        final long[][] operationCountsAtDurations = new long[statusRecency][3];
+        final long[][] operationCountsAtDurations = new long[statusRecency][4];
         for ( int i = 0; i < operationCountsAtDurations.length; i++ )
         {
             operationCountsAtDurations[i][0] = -1;
             operationCountsAtDurations[i][1] = -1;
             operationCountsAtDurations[i][2] = -1;
+            operationCountsAtDurations[i][3] = -1;
         }
         int statusRecencyIndex = 0;
 
@@ -59,6 +60,7 @@ class WorkloadStatusThread extends Thread
                 operationCountsAtDurations[statusRecencyIndex][0] = status.operationCount();
                 operationCountsAtDurations[statusRecencyIndex][1] = status.runDurationAsMilli();
                 operationCountsAtDurations[statusRecencyIndex][2] = status.getUpdateCount();
+                operationCountsAtDurations[statusRecencyIndex][3] = status.getReadCount();
                 statusRecencyIndex = (statusRecencyIndex + 1) % statusRecency;
                 updateRecentThroughput( operationCountsAtDurations, settableRecentThroughputAndDuration );
 
@@ -102,11 +104,14 @@ class WorkloadStatusThread extends Thread
         long maxDurationAsMilli = Long.MIN_VALUE;
         long minUpdateCount = Long.MAX_VALUE;
         long maxUpdateCount = Long.MIN_VALUE;
+        long minReadCount = Long.MAX_VALUE;
+        long maxReadCount = Long.MIN_VALUE;
         for ( int i = 0; i < recentOperationCountsAtDurations.length; i++ )
         {
             long operationCount = recentOperationCountsAtDurations[i][0];
             long durationAsMilli = recentOperationCountsAtDurations[i][1];
             long updateCount = recentOperationCountsAtDurations[i][2];
+            long readCount = recentOperationCountsAtDurations[i][3];
             if ( -1 == operationCount )
             {
                 continue;
@@ -117,19 +122,26 @@ class WorkloadStatusThread extends Thread
             maxDurationAsMilli = Math.max( maxDurationAsMilli, durationAsMilli );
             minUpdateCount = Math.min( minUpdateCount, updateCount );
             maxUpdateCount = Math.max( maxUpdateCount, updateCount );
+            minReadCount = Math.min( minReadCount, readCount );
+            maxReadCount = Math.max( maxReadCount, readCount );
         }
         long recentRunDurationAsMilli = maxDurationAsMilli - minDurationAsMilli;
         long recentOperationCount = maxOperationCount - minOperationCount;
         long recentUpdateOperationCount = maxUpdateCount - minUpdateCount;
+        long recentReadOperationCount = maxReadCount - minReadCount;
         double recentThroughput = (0 == recentRunDurationAsMilli)
                                   ? 0
                                   : (double) recentOperationCount / recentRunDurationAsMilli * 1000;
         double recentUpdateThroughput = (0 == recentRunDurationAsMilli)
                 ? 0
                 : (double) recentUpdateOperationCount / recentRunDurationAsMilli * 1000;
+        double recentReadThroughput = (0 == recentRunDurationAsMilli)
+                ? 0
+                : (double) recentReadOperationCount / recentRunDurationAsMilli * 1000;
         settableRecentThroughputAndDuration.setThroughput( recentThroughput );
         settableRecentThroughputAndDuration.setDuration( recentRunDurationAsMilli );
         settableRecentThroughputAndDuration.setUpdateThroughput( recentUpdateThroughput );
+        settableRecentThroughputAndDuration.setReadThroughput( recentReadThroughput );
 
     }
 
@@ -137,6 +149,8 @@ class WorkloadStatusThread extends Thread
     {
         private double throughput = 0.0;
         private long duration = 0;
+        private double updateThroughput = 0.0;
+        private double readThroughput = 0.0;
 
         public double updateThroughput() {
             return updateThroughput;
@@ -146,7 +160,14 @@ class WorkloadStatusThread extends Thread
             this.updateThroughput = updateThroughput;
         }
 
-        private double updateThroughput;
+
+        public double readThroughput() {
+            return readThroughput;
+        }
+
+        public void setReadThroughput(double readThroughput) {
+            this.readThroughput = readThroughput;
+        }
 
         private void setThroughput( double throughput )
         {

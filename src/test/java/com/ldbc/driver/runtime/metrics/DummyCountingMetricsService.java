@@ -31,12 +31,12 @@ public class DummyCountingMetricsService implements MetricsService, MetricsServi
 
     @Override
     public WorkloadStatusSnapshot status() throws MetricsCollectionException {
-        return new WorkloadStatusSnapshot(-1, count, -1, 0, updateCount, 0);
+        return new WorkloadStatusSnapshot(-1, count, -1, 0, updateCount, 0, 0, 0 );
     }
 
     @Override
     public WorkloadResultsSnapshot results() throws MetricsCollectionException {
-        return new WorkloadResultsSnapshot(metrics, 0, 0, count, updateCount, TimeUnit.MILLISECONDS);
+        return new WorkloadResultsSnapshot(metrics, 0, 0, count, updateCount, 0, TimeUnit.MILLISECONDS);
     }
 
     @Override
