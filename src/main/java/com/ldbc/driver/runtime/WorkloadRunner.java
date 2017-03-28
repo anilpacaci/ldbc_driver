@@ -47,7 +47,8 @@ public class WorkloadRunner
             long spinnerSleepDurationAsMilli,
             boolean ignoreScheduleStartTimes,
             int operationHandlerExecutorsBoundedQueueSize,
-            boolean consumeUpdates ) throws WorkloadException, MetricsCollectionException
+            boolean consumeUpdates,
+            int consumerThreadCount ) throws WorkloadException, MetricsCollectionException
     {
         this.workloadRunnerFuture = new WorkloadRunnerFuture(
                 timeSource,
@@ -62,7 +63,8 @@ public class WorkloadRunner
                 spinnerSleepDurationAsMilli,
                 ignoreScheduleStartTimes,
                 operationHandlerExecutorsBoundedQueueSize,
-                consumeUpdates );
+                consumeUpdates,
+                consumerThreadCount);
     }
 
     public Future<ConcurrentErrorReporter> getFuture()
@@ -92,7 +94,8 @@ public class WorkloadRunner
                 long spinnerSleepDurationAsMilli,
                 boolean ignoreScheduleStartTimes,
                 int operationHandlerExecutorsBoundedQueueSize,
-                boolean consumeUpdates ) throws MetricsCollectionException, WorkloadException
+                boolean consumeUpdates,
+                int consumerThreadCount ) throws MetricsCollectionException, WorkloadException
         {
             this.workloadRunnerThread = new WorkloadRunnerThread(
                     timeSource,
@@ -107,7 +110,8 @@ public class WorkloadRunner
                     spinnerSleepDurationAsMilli,
                     ignoreScheduleStartTimes,
                     operationHandlerExecutorsBoundedQueueSize,
-                    consumeUpdates );
+                    consumeUpdates,
+                    consumerThreadCount);
             this.timeSource = timeSource;
             this.errorReporter = errorReporter;
         }
@@ -300,7 +304,8 @@ public class WorkloadRunner
                 long spinnerSleepDurationAsMilli,
                 boolean ignoreScheduleStartTimes,
                 int operationHandlerExecutorsBoundedQueueSize,
-                boolean consumeUpdates ) throws WorkloadException, MetricsCollectionException
+                boolean consumeUpdates,
+                int consumerThreadCount ) throws WorkloadException, MetricsCollectionException
         {
             this.errorReporter = errorReporter;
             this.statusDisplayIntervalAsMilli = statusDisplayIntervalAsSeconds;
@@ -351,7 +356,9 @@ public class WorkloadRunner
                     executorForAsynchronous,
                     localCompletionTimeWriterForAsynchronous
             );
-            this.executorForConsumer = new ConsumerSameThreadOperationExecutor(
+            this.executorForConsumer = new ConsumerThreadPoolOperationExecutor(
+                    consumerThreadCount, //TODO: different thread count
+                    operationHandlerExecutorsBoundedQueueSize,
                     db,
                     localCompletionTimeWriterForAsynchronous,
                     completionTimeService,
@@ -360,6 +367,7 @@ public class WorkloadRunner
                     errorReporter,
                     metricsService
             );
+
             try {
                 this.consumerOperationStreamExecutorService = new ConsumerOperationStreamExecutorService(
                         errorReporter, executorForConsumer );
