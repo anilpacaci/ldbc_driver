@@ -1,11 +1,13 @@
 #!/bin/bash
 
-operation_count=100
-thread_count=16
-time_compression_ratio=0.0001
+operation_count=1000
+thread_count=64
+time_compression_ratio=0.1
 
 # used to determine workload mode, if false just produces updates for kafka queue, if yes then runs on actual SUT
 consume_mode=true
+
+ignore_scheduled_start_times=true
 
 graph_name=sf10_updates
 
@@ -36,7 +38,7 @@ db=ca.uwaterloo.cs.ldbc.interactive.gremlin.GremlinDb
 
 # jar file for the workload implementation
 workload_impl_gremlin=/hdd1/gp/graph-benchmarking/snb-interactive-gremlin/target/snb-interactive-gremlin-1.0-SNAPSHOT-jar-with-dependencies.jar
-workload_impl=$workload_impl_titan
+workload_impl=$workload_impl_gremlin
 
 # first argument is a boolean. Run debug mode if given true
 if [ "$1" = true ] ; then
@@ -45,4 +47,4 @@ else
     JAVA="java"
 fi
 
-exec $JAVA -cp "target/jeeves-0.3-SNAPSHOT.jar:src/main/resources:$workload_impl" com.ldbc.driver.Client -w com.ldbc.driver.workloads.ldbc.snb.interactive.LdbcSnbInteractiveWorkload -oc $operation_count -P $conf_path -p "ldbc.snb.interactive.parameters_dir|$parameters_dir" -p "ldbc.snb.interactive.updates_dir|$updates_dir" -p "graphName|$graph_name" -p "locator|$locator" -db $db -tc $thread_count -tcr $time_compression_ratio -cu $consume_mode
+exec $JAVA -cp "target/jeeves-0.3-SNAPSHOT.jar:src/main/resources:$workload_impl" com.ldbc.driver.Client -w com.ldbc.driver.workloads.ldbc.snb.interactive.LdbcSnbInteractiveWorkload -oc $operation_count -P $conf_path -p "ldbc.snb.interactive.parameters_dir|$parameters_dir" -p "ldbc.snb.interactive.updates_dir|$updates_dir" -p "graphName|$graph_name" -p "locator|$locator" -db $db -tc $thread_count -tcr $time_compression_ratio -ignore_scheduled_start_times $ignore_scheduled_start_times -cu $consume_mode
