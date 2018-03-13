@@ -351,19 +351,31 @@ public class WorkloadRunner
                     executorForAsynchronous,
                     localCompletionTimeWriterForAsynchronous
             );
-            this.executorForConsumer = new ConsumerSameThreadOperationExecutor(
-                    db,
-                    localCompletionTimeWriterForAsynchronous,
-                    completionTimeService,
-                    spinner,
-                    timeSource,
-                    errorReporter,
-                    metricsService
-            );
+            if(consumeUpdates) {
+                // initialize only if consumeUpdate mode is activated, meaning that Kafka Consumer will be used
+                this.executorForConsumer = new ConsumerSameThreadOperationExecutor(
+                        db,
+                        localCompletionTimeWriterForAsynchronous,
+                        completionTimeService,
+                        spinner,
+                        timeSource,
+                        errorReporter,
+                        metricsService
+                );
+            } else {
+                this.executorForConsumer = null;
+            }
+
             try
             {
-                this.consumerOperationStreamExecutorService = new ConsumerOperationStreamExecutorService(
-                        errorReporter, executorForConsumer );
+                if(consumeUpdates) {
+                    // initialize only if consumeUpdate mode is activated, meaning that Kafka Consumer will be used
+                    this.consumerOperationStreamExecutorService = new ConsumerOperationStreamExecutorService(
+                            errorReporter, executorForConsumer );
+                }
+                else {
+                    this.consumerOperationStreamExecutorService = null;
+                }
             }
             catch ( OperationExecutorException e )
             {
