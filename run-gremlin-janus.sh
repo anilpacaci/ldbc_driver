@@ -1,7 +1,7 @@
 #!/bin/bash
 
-operation_count=250000
-thread_count=192
+operation_count=1000000
+thread_count=96
 time_compression_ratio=0.1
 
 # used to determine workload mode, if false just produces updates for kafka queue, if yes then runs on actual SUT
@@ -21,7 +21,8 @@ locator=$locatorlar8
 # configuration params for benchmark run
 conf_onehop=/hdd1/gp/ldbc_driver/configuration/ldbc-q11-onehop.properties
 conf_twohop=/hdd1/gp/ldbc_driver/configuration/ldbc-q12-twohop.properties
-conf_path=$conf_twohop
+conf_sssp=/hdd1/gp/ldbc_driver/configuration/ldbc-q13-sssp.properties
+conf_path=$conf_onehop
 
 # dataset location
 dataset_location_sf3=/home/apacaci/ldbc-gremlin/ldbc_snb_datagen/datasets/sf3_updates
